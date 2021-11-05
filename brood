@@ -1,0 +1,24 @@
+import scrapy
+
+
+class aldi2(scrapy.Spider):
+    name = 'aldi2'
+    start_urls = ['https://www.aldi.nl/producten/brood-bakkerij/dagvers-brood.html']
+
+    def parse(self, response):
+        for products in response.css('div.mod.mod-article-tile.mod-article-tile--default.ct-backwaren'):
+            yield{
+                'link' : products.css('a.mod-article-tile__action').attrib['href']
+            }
+            url = products.css('a.mod-article-tile__action').attrib['href']
+            yield response.follow(url=url, callback=self.parse_page)
+
+    def parse_page(self, response):
+        for products in response.css:
+            yield {
+                'title': products.css('h1::text').getall(),
+                'price': products.css('span.price__wrapper::text').get().strip(),
+                'unit': products.css('span.price__unit::text').get().strip(),
+                'image_link': products.css('a.mod-gallery-article__media.mod-gallery-article__media--img.has-lightbox').attrib['href'],
+                'description': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n', '').replace('<br>','').replace('</p>', '').replace('<p>', '')
+            }
