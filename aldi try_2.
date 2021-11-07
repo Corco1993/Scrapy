@@ -26,7 +26,7 @@ class aldi2(scrapy.Spider):
     def parse_page2(self, response):
         for products3 in response.css('div.mod.mod-article-tile.mod-article-tile--default.ct-backwaren'):
             yield {
-                'title': products3.css('h1::text').get(),
+                'title': products3.css('.mod-article-tile__title::text').get().replace('\n', '').replace('\t', ''),
                 'price': products3.css('span.price__wrapper::text').get().strip(),
                 'unit': products3.css('span.price__unit::text').get().strip(),
                 'description': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n', '').replace('<br>','').replace('</p>', '').replace('<p>', '')
