@@ -6,28 +6,32 @@ class aldi2(scrapy.Spider):
     start_urls = ['https://www.aldi.nl/producten.html']
 
     def parse(self, response):
-        for products in response.css('div.tiles-grid'):
+        products = response.css('div.tiles-grid')
+        for product in products:
             yield {
-            'title': products.css('h4.mod-content-tile__title::text').getall(),
-            'description': products.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
+                'title': product.css('h4.mod-content-tile__title::text').getall(),
+                'description': product.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
             }
-        for product_url in response.css('.mod-content-tile__action::attr(href)').getall():
-            yield response.follow('https://www.aldi.nl/' + product_url, callback=self.parse_page)
+        for link in response.css('.mod-content-tile__action::attr(href)'):
+            yield response.follow(link.get(),callback=self.parse_categ1)
 
-    def parse_page(self,response):
-        for products2 in response.css('div.tiles-grid'):
-            yield {
-                'title2': products2.css('h4.mod-content-tile__title::text').getall(),
-                'description2': products2.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
-            }
-        for product_url2 in response.css('.mod-article-tile__action::attr(href)').getall():
-            yield response.follow('https://www.aldi.nl/' + product_url2, callback=self.parse_page2)
+    def parse_categ1(self,response):
+        products2 = response.css('div.tiles-grid')
+        yield {
+            'title2': products2.css('h4.mod-content-tile__title::text').getall(),
+            'description2': products2.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
+        }
 
-    def parse_page2(self, response):
-        for products3 in response.css('div.mod.mod-article-tile.mod-article-tile--default.ct-backwaren'):
-            yield {
-                'title': products3.css('.mod-article-tile__title::text').get().replace('\n', '').replace('\t', ''),
-                'price': products3.css('span.price__wrapper::text').get().strip(),
-                'unit': products3.css('span.price__unit::text').get().strip(),
-                'description': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n', '').replace('<br>','').replace('</p>', '').replace('<p>', '')
-            }
+        for link in response.css('.mod-content-tile__action::attr(href)'):
+            yield response.follow(link.get(),callback=self.parse_categ2)
+
+    def parse_categ2(self,response):
+        products3 = response.css('div.mod.mod-article-tile.mod-article-tile--default.ct-backwaren')
+        yield {
+            'title3': products3.css('.mod-article-tile__title::text').get().replace('\n', '').replace('\t', ''),
+            'price3': products3.css('span.price__wrapper::text').get().strip(),
+            'unit3': products3.css('span.price__unit::text').get().strip(),
+            'description3': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n', '').replace('<br>','').replace('</p>', '').replace('<p>', ''),
+            'description4' : response.css('div[class="rte"]').get().replace('\n', '').replace('\t', ''),
+            'titlu4' : response.css('h1::text').extract().replace('\n', '').replace('\t', '')
+        }
