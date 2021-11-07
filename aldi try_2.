@@ -4,41 +4,30 @@ import scrapy
 class aldi2(scrapy.Spider):
     name = 'aldi2'
     start_urls = ['https://www.aldi.nl/producten.html']
-    
 
     def parse(self, response):
-        yield {
-            'title1': response.css('h4.mod-content-tile__title::text').getall(),
-            'description1': response.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
-        }
-        for product_url in response.css('a.mod-content-tile__action::attr(href)').getall():
+        for products in response.css('div.tiles-grid'):
+            yield {
+            'title': products.css('h4.mod-content-tile__title::text').getall(),
+            'description': products.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
+            }
+        for product_url in response.css('.mod-content-tile__action::attr(href)').getall():
             yield response.follow('https://www.aldi.nl/' + product_url, callback=self.parse_page)
 
-
     def parse_page(self,response):
-        yield {
-            'title2': response.css('h4.mod-content-tile__title::text').getall(),
-            'description2': response.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
-        }
-        for product_url in response.css('a.mod-content-tile__action::attr(href)').getall():
-            yield response.follow('https://www.aldi.nl/' + product_url, callback=self.parse_page2)
-            
+        for products2 in response.css('div.tiles-grid'):
+            yield {
+                'title2': products2.css('h4.mod-content-tile__title::text').getall(),
+                'description2': products2.xpath("//div[@class='mod-content-tile__content']//p[1]").getall()
+            }
+        for product_url2 in response.css('.mod-article-tile__action::attr(href)').getall():
+            yield response.follow('https://www.aldi.nl/' + product_url2, callback=self.parse_page2)
 
-    def parse_page2(self,response):
-        yield {
-            'title3': response.css('h1::text').get().replace('\n', '').replace('\t', '')
-        }
-        for product_url in response.css('a.mod-content-tile__action::attr(href)').getall():
-            yield response.follow('https://www.aldi.nl/' + product_url, callback=self.parse_page3)
-
-
-    def parse_page3(self,response):
-        yield {
-            'title4': response.css('h1::text').get().replace('\n', '').replace('\t', ''),
-            'price': response.css('span.price__wrapper::text').get().strip(),
-            'unit': response.css('span.price__unit::text').get().strip(),
-            'image_link':
-                response.css('a.mod-gallery-article__media.mod-gallery-article__media--img.has-lightbox').attrib[
-                    'href'],
-            'description4': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n','').replace('<br>','').replace('</p>', '').replace('<p>', '')
-        }
+    def parse_page2(self, response):
+        for products3 in response.css('div.mod.mod-article-tile.mod-article-tile--default.ct-backwaren'):
+            yield {
+                'title': products3.css('h1::text').get(),
+                'price': products3.css('span.price__wrapper::text').get().strip(),
+                'unit': products3.css('span.price__unit::text').get().strip(),
+                'description': response.xpath('//div[@class="rte"]//p[1]').get().replace('\n', '').replace('<br>','').replace('</p>', '').replace('<p>', '')
+            }
